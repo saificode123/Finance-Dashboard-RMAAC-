@@ -4,14 +4,12 @@ import { doSignInWithEmailAndPassword, doSignInWithGoogle } from '../../firebase
 import { useAuth } from '../../context/authContext';
 import logo from '../../components/login/download.png'
 
-// --- Icons (Moved Outside Component) ---
-// By defining these outside, they are not re-created on every render.
 const RhombusIcon = () => (
   <img 
     src={logo}
-    alt="Rhombus Logo" // ✨ ADDED: alt text for accessibility
-    className="w-6 h-6 mr-2" // Use Tailwind to style the image
-    aria-hidden="true" // Keep this if it's purely decorative
+    alt="Rhombus Logo" 
+    className="w-6 h-6 mr-2"
+    aria-hidden="true" 
   />
 );
 

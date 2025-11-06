@@ -2,6 +2,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'; // We will create
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/login/Login';
 import { AuthProvider } from './context/authContext';
+import SignUp from './components/signup/SignUp';
 
 function App() {
   return (
@@ -9,7 +10,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
-          {/* <Route path="/signup" element={<SignUp />} />  */}
+          <Route path="/signup" element={<SignUp />} /> 
           {/* <Route 
             path="/home" 
             element={
