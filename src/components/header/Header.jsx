@@ -49,7 +49,7 @@ const Header = () => {
 
           {/* Middle: Navigation Links */}
           <nav className="hidden md:flex space-x-6">
-            <Link to="/home/report" className="text-sm font-medium text-gray-600 hover:text-[#6D79CF]">Report</Link>
+            <Link to="/home" className="text-sm font-medium text-gray-600 hover:text-[#6D79CF]">Report</Link>
             <Link to="/home/data" className="text-sm font-medium text-gray-600 hover:text-[#6D79CF]">Data Table</Link>
             <Link to="/home/input" className="text-sm font-medium text-gray-600 hover:text-[#6D79CF]">Input</Link>
           </nav>

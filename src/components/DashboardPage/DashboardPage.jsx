@@ -1,81 +1,89 @@
 import React, { useState, useMemo } from 'react';
 import { Home, ChevronRight, Calendar, BarChart, PieChart, ShoppingBag, User } from 'lucide-react';
 
-import StatCard from '../statCard/StatCard.jsx';
-import ChartCard from '../graphs/ChartCard.jsx';
-import TableCard from '../graphs/TableCard.jsx';
+// --- 1. Import DatePicker and its CSS ---
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-// Data Source
+// --- 2. Corrected Import Paths ---
+// Assumes these components are in: /components/dashboard/
+import StatCard from '../statCard/StatCard'; 
+import ChartCard from '../graphs/ChartCard';
+import TableCard from '../graphs/TableCard';
+
+// Assumes your charts are in a subfolder: /components/dashboard/charts/
+import RevenueVsExpensePie from '../graphs/RevenuePie'; 
+import MarketingSpendArea from '../graphs/MarketingArea'; 
+import CostSegmentArea from '../graphs/CostSegmentArea'; 
+import TotalExpenseDonut from '../graphs/TotalExpenseDonut';
+
+// Assumes your data is in: /src/data/
 import { 
   MONTH_KEYS, 
   MOCK_FINANCIAL_DATA, 
   MOCK_SEGMENT_FLUCTUATION, 
   MOCK_VARIANCE_ALERT 
-} from '../dummydata/DummyData.jsx';
+} from '../dummydata/DummyData'; 
 
-// Chart Components (from files you provided)
-import RevenueVsExpensePie from '../graphs/RevenuePie.jsx'; 
-import MarketingSpendArea from '../graphs/MarketingArea.jsx'; 
-import CostSegmentArea from '../graphs/CostSegmentArea.jsx'; 
-import TotalExpenseDonut from '../graphs/TotalExpenseDonut.jsx';
-
-// Helper to format currency
+// --- 3. Helper Functions ---
 const formatCurrency = (value) => {
+  if (typeof value !== 'number') return '$0';
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+};
+
+const getMonthKey = (date) => {
+  if (!date) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
 };
 
 // --- Main Dashboard Page Component ---
 const DashboardPage = () => {
-  // --- 1. State for Date Filter ---
-  // Default to the last 6 months of available data
-  const defaultStartDate = MONTH_KEYS[Math.max(0, MONTH_KEYS.length - 6)].key;
-  const defaultEndDate = MONTH_KEYS[MONTH_KEYS.length - 1].key;
+
+  // --- 4. State for Date Filter ---
+  const defaultStartDate = new Date(MONTH_KEYS[Math.max(0, MONTH_KEYS.length - 6)].key);
+  const defaultEndDate = new Date(MONTH_KEYS[MONTH_KEYS.length - 1].key);
   
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
+  const [dateRange, setDateRange] = useState([defaultStartDate, defaultEndDate]);
+  const [startDate, endDate] = dateRange;
 
-  // --- 2. Data Processing ---
-  // This 'useMemo' hook will re-run ONLY when the filter dates change.
-  // This is where you would make your API call in the future.
+  // --- 5. Data Processing (Memoized) ---
   const filteredData = useMemo(() => {
-    // This is dynamic page tracking: the data filters based on state.
+    const startKey = getMonthKey(startDate);
+    const endKey = getMonthKey(endDate);
+    if (!startKey || !endKey) return [];
+    
     return MOCK_FINANCIAL_DATA.filter(
-      d => d.monthKey >= startDate && d.monthKey <= endDate
+      d => d.monthKey >= startKey && d.monthKey <= endKey
     );
-  }, [startDate, endDate]);
+  }, [dateRange]);
 
-  // Calculate aggregated stats for the KPI cards
   const stats = useMemo(() => {
     const totalRevenue = filteredData.reduce((acc, item) => acc + item.revenue, 0);
     const totalExpenses = filteredData.reduce((acc, item) => acc + item.expenses, 0);
     const netProfit = totalRevenue - totalExpenses;
-    const mktgRevenue = totalRevenue > 0 ? (filteredData.reduce((acc, item) => acc + item.marketingSpend, 0) / totalRevenue) : 0;
+    const marketingSpend = filteredData.reduce((acc, item) => acc + item.marketingSpend, 0);
+    const mktgRevenue = totalRevenue > 0 ? (marketingSpend / totalRevenue) : 0;
     
-    return {
-      totalRevenue,
-      totalExpenses,
-      netProfit,
-      mktgRevenue,
-    };
+    return { totalRevenue, totalExpenses, netProfit, mktgRevenue };
   }, [filteredData]);
 
-  // --- 3. Helper to render table rows ---
+  // --- 6. Table Row Renderer (Helper) ---
   const renderTableRow = (item) => (
     <tr key={item.segment} className="border-b border-gray-100 last:border-b-0">
       <td className="py-3 px-2 text-sm text-gray-700">{item.segment}</td>
       <td className="py-3 px-2 text-sm text-gray-500">{formatCurrency(item.totalCost || item.currentCost)}</td>
       <td className="py-3 px-2 text-sm text-gray-500">{formatCurrency(item.avgMonthlyCost || item.mom)}</td>
-      {/* Only show fluctuation for the first table */}
-      {item.fluctuation && (
+      {item.fluctuation !== undefined && (
         <td className="py-3 px-2 text-sm text-gray-500">{formatCurrency(item.fluctuation)}</td>
       )}
     </tr>
   );
 
-  // --- 4. Render Component ---
+  // --- 7. JSX (Component Render) ---
   return (
     <div className="space-y-6">
-      <h1>Test Dashboard</h1>
       
       {/* 1. Breadcrumb and Date Picker */}
       <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
@@ -86,24 +94,30 @@ const DashboardPage = () => {
           <span>Summary</span>
         </nav>
         
-        {/* Date Filter Selection */}
-        <div className="flex items-center space-x-2 text-sm">
-          <Calendar size={16} className="mr-1 text-gray-500" />
-          <select 
-            value={startDate} 
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring-purple-500"
-          >
-            {MONTH_KEYS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-          </select>
-          <span>to</span>
-          <select 
-            value={endDate} 
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring-purple-500"
-          >
-            {MONTH_KEYS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-          </select>
+        {/* --- UPDATED DATE FILTER --- */}
+        <div className="flex items-center text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm">
+          <DatePicker
+            selectsRange={true}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(update) => setDateRange(update)}
+            minDate={startDate}
+            dateFormat="MMM d, yyyy"
+            
+            // ✨ --- THIS IS THE FIX --- ✨
+            // 'withPortal' renders the calendar in a modal at the top 
+            // of the page, fixing all z-index stacking issues.
+            withPortal 
+            
+            customInput={
+              <button className="flex items-center px-3 py-2">
+                <Calendar size={16} className="mr-2.5 text-gray-500" />
+                {startDate ? startDate.toLocaleDateString() : '...'}
+                <span className="mx-2 text-gray-400 font-medium">–</span> 
+                {endDate ? endDate.toLocaleDateString() : '...'}
+              </button>
+            }
+          />
         </div>
       </div>
 
@@ -112,40 +126,39 @@ const DashboardPage = () => {
         Performance Summary
       </h1>
 
-     {/* This grid wrapper arranges the cards horizontally and adds spacing */}
+      {/* 3. Stat Card Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard 
           title="Total Revenue"
           value="90%"
-          details="+90%" // Pass "+" to trigger green arrow
+          details="+90%" 
           icon={<BarChart size={28} className="text-green-600" />}
-          iconBg="bg-green-200" // Use a lighter bg for the opacity effect
+          iconBg="bg-green-200"
         />
         <StatCard 
           title="Total Expenses"
           value="49,832"
-          details={null} // No arrow
+          details={null} 
           icon={<User size={28} className="text-blue-600" />}
           iconBg="bg-blue-200"
         />
         <StatCard 
           title="Net Profit"
           value="$12,396" 
-          details={null} // No arrow
+          details={null}
           icon={<ShoppingBag size={28} className="text-orange-600" />}
           iconBg="bg-orange-200"
         />
         <StatCard 
           title="Mktg % Revenue"
           value="84%"
-          details="-84%" // Pass "-" to trigger red arrow
+          details="-84%"
           icon={<PieChart size={28} className="text-pink-600" />}
           iconBg="bg-pink-200"
         />
       </div>
 
-
-      {/* 4. Chart Grid - Now renders the real chart components */}
+      {/* 4. Chart Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         <ChartCard title="Revenue Vs Expense">
           <RevenueVsExpensePie data={filteredData} />
@@ -161,12 +174,12 @@ const DashboardPage = () => {
         </ChartCard>
       </div>
 
-      {/* 5. Table Grid - Now renders tables with dummy data */}
+      {/* 5. Table Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <TableCard title="Individual Segment Fluctuation">
           <table className="w-full">
             <thead>
-              <tr className="text-left text-xs text-gray-400 uppercase">
+              <tr className="text-left text-xs text-gray-400 uppercase font-semibold">
                 <th className="py-2 px-2">Segment</th>
                 <th className="py-2 px-2">Total Cost</th>
                 <th className="py-2 px-2">Avg. Monthly Cost</th>
@@ -181,7 +194,7 @@ const DashboardPage = () => {
         <TableCard title="Recent Variance Alert">
           <table className="w-full">
             <thead>
-              <tr className="text-left text-xs text-gray-400 uppercase">
+              <tr className="text-left text-xs text-gray-400 uppercase font-semibold">
                 <th className="py-2 px-2">Segment</th>
                 <th className="py-2 px-2">Current Cost</th>
                 <th className="py-2 px-2">MoM %</th>
