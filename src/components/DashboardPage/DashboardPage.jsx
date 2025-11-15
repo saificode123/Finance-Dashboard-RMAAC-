@@ -45,8 +45,9 @@ const DashboardPage = () => {
   const defaultStartDate = new Date(MONTH_KEYS[Math.max(0, MONTH_KEYS.length - 6)].key);
   const defaultEndDate = new Date(MONTH_KEYS[MONTH_KEYS.length - 1].key);
   
-  const [dateRange, setDateRange] = useState([defaultStartDate, defaultEndDate]);
-  const [startDate, endDate] = dateRange;
+  // Now we use two independent states for start and end
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultEndDate);
 
   // --- 5. Data Processing (Memoized) ---
   const filteredData = useMemo(() => {
@@ -54,10 +55,12 @@ const DashboardPage = () => {
     const endKey = getMonthKey(endDate);
     if (!startKey || !endKey) return [];
     
+    // When you have a real API, this is what you'll send:
+    // (e.g., /api/data?start=2025-05-01&end=2025-07-01)
     return MOCK_FINANCIAL_DATA.filter(
       d => d.monthKey >= startKey && d.monthKey <= endKey
     );
-  }, [dateRange]);
+  }, [startDate, endDate]); // Dependency array is now [startDate, endDate]
 
   const stats = useMemo(() => {
     const totalRevenue = filteredData.reduce((acc, item) => acc + item.revenue, 0);
@@ -94,29 +97,42 @@ const DashboardPage = () => {
           <span>Summary</span>
         </nav>
         
-        {/* --- UPDATED DATE FILTER --- */}
+        {/* --- ✨ ADJUSTED DATE FILTER --- */}
+        {/* We now have two independent DatePickers, styled to look like one unit. */}
         <div className="flex items-center text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm">
+          <Calendar size={16} className="ml-3 mr-1.5 text-gray-500" />
+          
+          {/* Start Date Picker (Month Picker) */}
           <DatePicker
-            selectsRange={true}
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            selectsStart
             startDate={startDate}
             endDate={endDate}
-            onChange={(update) => setDateRange(update)}
-            minDate={startDate}
-            dateFormat="MMM d, yyyy"
-            
-            // ✨ --- THIS IS THE FIX --- ✨
-            // 'withPortal' renders the calendar in a modal at the top 
-            // of the page, fixing all z-index stacking issues.
-            withPortal 
-            
-            customInput={
-              <button className="flex items-center px-3 py-2">
-                <Calendar size={16} className="mr-2.5 text-gray-500" />
-                {startDate ? startDate.toLocaleDateString() : '...'}
-                <span className="mx-2 text-gray-400 font-medium">–</span> 
-                {endDate ? endDate.toLocaleDateString() : '...'}
-              </button>
-            }
+            // This logic is good: you can't pick a start date *after* the end date
+            maxDate={endDate} 
+            showMonthYearPicker // This is the key prop!
+            dateFormat="MMM yyyy"
+            // Simple styling to make it look like text
+            className="w-24 py-2 text-gray-700 focus:outline-none"
+            withPortal // Fixes z-index issues
+          />
+          
+          <span className="mx-1 text-gray-400 font-medium">–</span> 
+          
+          {/* End Date Picker (Month Picker) */}
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            selectsEnd
+            startDate={startDate}
+            endDate={endDate}
+            // This logic is good: you can't pick an end date *before* the start date
+            minDate={startDate} 
+            showMonthYearPicker // This is the key prop!
+            dateFormat="MMM yyyy"
+            className="w-24 py-2 text-gray-700 focus:outline-none"
+            withPortal // Fixes z-index issues
           />
         </div>
       </div>
