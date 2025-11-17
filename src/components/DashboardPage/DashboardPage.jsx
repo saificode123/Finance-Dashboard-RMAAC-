@@ -48,6 +48,7 @@ const DashboardPage = () => {
   // Now we use two independent states for start and end
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // --- 5. Data Processing (Memoized) ---
   const filteredData = useMemo(() => {
@@ -97,44 +98,92 @@ const DashboardPage = () => {
           <span>Summary</span>
         </nav>
         
-        {/* --- ✨ ADJUSTED DATE FILTER --- */}
-        {/* We now have two independent DatePickers, styled to look like one unit. */}
-        <div className="flex items-center text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm">
-          <Calendar size={16} className="ml-3 mr-1.5 text-gray-500" />
-          
-          {/* Start Date Picker (Month Picker) */}
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => setStartDate(date)}
-            selectsStart
-            startDate={startDate}
-            endDate={endDate}
-            // This logic is good: you can't pick a start date *after* the end date
-            maxDate={endDate} 
-            showMonthYearPicker // This is the key prop!
-            dateFormat="MMM yyyy"
-            // Simple styling to make it look like text
-            className="w-24 py-2 text-gray-700 focus:outline-none"
-            withPortal // Fixes z-index issues
-          />
-          
-          <span className="mx-1 text-gray-400 font-medium">–</span> 
-          
-          {/* End Date Picker (Month Picker) */}
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => setEndDate(date)}
-            selectsEnd
-            startDate={startDate}
-            endDate={endDate}
-            // This logic is good: you can't pick an end date *before* the start date
-            minDate={startDate} 
-            showMonthYearPicker // This is the key prop!
-            dateFormat="MMM yyyy"
-            className="w-24 py-2 text-gray-700 focus:outline-none"
-            withPortal // Fixes z-index issues
-          />
-        </div>
+        {/* --- âœ¨ ADJUSTED DATE FILTER WITH MODAL --- */}
+        {/* Filter Button */}
+        <button
+          onClick={() => setIsFilterOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition"
+        >
+          <Calendar size={16} className="text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">
+            {startDate?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - {endDate?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+          </span>
+        </button>
+
+        {/* Date Picker Modal */}
+        {isFilterOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Select Date Range</h2>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Start Date */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  maxDate={endDate}
+                  showMonthYearPicker
+                  dateFormat="MMM yyyy"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700"
+                  withPortal
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate}
+                  showMonthYearPicker
+                  dateFormat="MMM yyyy"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700"
+                  withPortal
+                />
+              </div>
+
+              {/* Display Selected Range */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold">Selected Range:</span> {startDate?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - {endDate?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                >
+                  Apply Filter
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Page Title */}
