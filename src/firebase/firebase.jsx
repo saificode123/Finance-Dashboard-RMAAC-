@@ -1,12 +1,15 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import {getAuth} from "firebase/auth"
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ⚠️ REMINDER: Move this to a .env file!
 const firebaseConfig = {
   apiKey: "AIzaSyBsZI1vHEKf4NEB95K_S0pyNHiTkPVqhbE",
   authDomain: "finance-3f570.firebaseapp.com",
@@ -22,4 +25,8 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 
-export {app , analytics , auth};
+// ✨ ADDED: Initialize Firestore and export it
+const db = getFirestore(app);
+
+// ✨ UPDATED: Export db alongside app, analytics, and auth
+export { app, analytics, auth, db };

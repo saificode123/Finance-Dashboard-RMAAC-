@@ -1,4 +1,4 @@
-import ProtectedRoute from './components/auth/ProtectedRoute'; // We will create this
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './components/login/Login';
 import { AuthProvider } from './context/authContext';
@@ -14,8 +14,10 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<SignUp />} /> 
           <Route path="/reset-password" element={<ResetPage />} />
+          
+          {/* ✨ UPDATED: Changed path to /home/* to allow nested routes */}
           <Route 
-            path="/home" 
+            path="/home/*" // This allows /home, /home/input, /home/data etc.
             element={
               <ProtectedRoute>
                 <HomePage />
