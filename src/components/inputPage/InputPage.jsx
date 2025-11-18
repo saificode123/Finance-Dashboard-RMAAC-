@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authContext';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+// ✨ 1. REMOVED: Bad import of 'db'
+// ✨ 2. CHANGED: Imports now come from the official 'firebase/firestore' library
+import { doc, setDoc, onSnapshot } from 'firebase/firestore'; 
 import { List, Plus, Trash2, Loader2 } from 'lucide-react';
 
 // --- 1. Segment Manager Component ---
+// (No changes needed inside this component, it was already correct)
 const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
   const [newSegment, setNewSegment] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('fixed');
@@ -14,7 +17,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
 
   const handleAddSegment = async () => {
     if (!newSegment.trim()) return;
-
     const updatedSegments = JSON.parse(JSON.stringify(segments)); 
     if (selectedCategory === 'fixed') {
       if (!updatedSegments.fixed.includes(newSegment.trim())) {
@@ -28,7 +30,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
         updatedSegments.variable[selectedCategory].push(newSegment.trim());
       }
     }
-
     await saveSegments(updatedSegments, "Segment added successfully!");
     setNewSegment('');
   };
@@ -48,20 +49,14 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
       setStatus("Error: Not connected.");
       return;
     }
-    
-    // This is the correct path, using the correct appId
     const docRef = doc(db, `artifacts/${appId}/users/${userId}/master_data`, 'master_segments');
     setIsSaving(true);
     setStatus('Saving...');
-
     try {
-      // Removed the timeout. We will wait for the real response.
       await setDoc(docRef, newSegments, { merge: true });
       setStatus(successMessage);
-
     } catch (e) {
       console.error("Error saving segments:", e);
-      // This will show the REAL Firebase error (e.g., "Permission Denied")
       setStatus(`Error: ${e.message}`); 
     } finally {
       setIsSaving(false);
@@ -80,7 +75,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
         <List size={20} className="mr-2" />
         Manage Expense Segments
       </h3>
-      
       <div className="flex flex-col sm:flex-row gap-2 mb-6">
         <select
           value={selectedCategory}
@@ -108,7 +102,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
           {isSaving ? 'Saving...' : 'Add Segment'}
         </button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
         <div>
           <h4 className="font-semibold text-gray-700 mb-2 pb-2 border-b">Fixed Costs</h4>
@@ -123,7 +116,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
             ))}
           </ul>
         </div>
-
         <div>
            <h4 className="font-semibold text-gray-700 mb-2 pb-2 border-b">Variable Costs</h4>
            <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
@@ -145,7 +137,6 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
            </div>
         </div>
       </div>
-      
       {status && (
         <p className={`text-center mt-4 text-sm font-bold ${status.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>
           {status}
@@ -158,11 +149,9 @@ const SegmentManager = ({ db, userId, appId, segments, isSegmentsLoading }) => {
 
 // --- 3. Main Page Component ---
 const InputPage = () => {
-  const { db, currentUser } = useAuth();
+  // ✨ 3. GET db from useAuth() (This is the correct way)
+  const { db, currentUser } = useAuth(); 
   const userId = currentUser?.uid;
-  
-  // ✨ --- THE FIX --- ✨
-  // My typo 'finance-3f50' is now corrected to 'finance-3f570'
   const appId = 'finance-3f570'; // From your docs
   
   const [segments, setSegments] = useState({ fixed: [], variable: {} });
@@ -179,9 +168,9 @@ const InputPage = () => {
   };
 
   useEffect(() => {
-    if (!db || !userId) return;
+    // ✨ 4. db now comes from useAuth() and will be correctly defined
+    if (!db || !userId) return; 
 
-    // This path will now be correct
     const docRef = doc(db, `artifacts/${appId}/users/${userId}/master_data`, 'master_segments');
     
     const unsubscribe = onSnapshot(docRef, (docSnap) => {

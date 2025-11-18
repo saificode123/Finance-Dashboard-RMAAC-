@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import Header from '../header/Header';
 import DashboardPage from '../DashboardPage/DashboardPage';
 import InputPage from '../inputPage/InputPage'; 
+import CostInputPage from '../DataInput/CostInputPage';
+import ProfilePage from '../profilePage/ProfilePage'
 
 // This component now acts as the main layout (Header + Page Content)
 // for all protected routes.
@@ -19,25 +21,17 @@ const Home = () => {
         */}
         <Routes>
           {/* /home will render the DashboardPage */}
-          <Route path="/" element={<DashboardPage />} /> 
-          
-          {/* /home/input will render the new InputPage */}
-          <Route path="/data" element={<InputPage />} />
+          <Route path="/" element={<DashboardPage />} />
 
-          {/* /home/data will render a placeholder for now */}
-          <Route path="/input" element={
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h1 className="text-2xl font-bold">Data Table Page</h1>
-              <p className="mt-2 text-gray-600">This page is not yet implemented.</p>
-            </div>
-          } />
+          {/* /home/input will render the InputPage */}
+          <Route path="/input" element={<InputPage />} />
+
+          {/* /home/data will render CostInputPage */}
+          <Route path="/data" element={<CostInputPage />} />
 
           {/* /home/profile will render a placeholder */}
            <Route path="/profile" element={
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h1 className="text-2xl font-bold">User Profile Page</h1>
-              <p className="mt-2 text-gray-600">This page is not yet implemented.</p>
-            </div>
+              <ProfilePage />
           } />
         </Routes>
       </main>
