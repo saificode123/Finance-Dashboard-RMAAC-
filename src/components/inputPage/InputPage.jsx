@@ -152,7 +152,7 @@ const InputPage = () => {
   // ✨ 3. GET db from useAuth() (This is the correct way)
   const { db, currentUser } = useAuth(); 
   const userId = currentUser?.uid;
-  const appId = 'finance-3f570'; // From your docs
+  const appId = import.meta.env.VITE_PROJECT_ID;
   
   const [segments, setSegments] = useState({ fixed: [], variable: {} });
   const [isSegmentsLoading, setIsSegmentsLoading] = useState(true);

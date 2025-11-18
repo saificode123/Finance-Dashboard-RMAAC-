@@ -1,23 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Home, ChevronRight, Calendar, BarChart, PieChart, ShoppingBag, User } from 'lucide-react';
 
-// --- 1. Import DatePicker and its CSS ---
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-// --- 2. Corrected Import Paths ---
-// Assumes these components are in: /components/dashboard/
 import StatCard from '../statCard/StatCard'; 
 import ChartCard from '../graphs/ChartCard';
 import TableCard from '../graphs/TableCard';
 
-// Assumes your charts are in a subfolder: /components/dashboard/charts/
 import RevenueVsExpensePie from '../graphs/RevenuePie'; 
 import MarketingSpendArea from '../graphs/MarketingArea'; 
 import CostSegmentArea from '../graphs/CostSegmentArea'; 
 import TotalExpenseDonut from '../graphs/TotalExpenseDonut';
 
-// Assumes your data is in: /src/data/
 import { 
   MONTH_KEYS, 
   MOCK_FINANCIAL_DATA, 
@@ -25,7 +20,6 @@ import {
   MOCK_VARIANCE_ALERT 
 } from '../dummydata/DummyData'; 
 
-// --- 3. Helper Functions ---
 const formatCurrency = (value) => {
   if (typeof value !== 'number') return '$0';
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -38,30 +32,24 @@ const getMonthKey = (date) => {
   return `${year}-${month}-01`;
 };
 
-// --- Main Dashboard Page Component ---
 const DashboardPage = () => {
 
-  // --- 4. State for Date Filter ---
   const defaultStartDate = new Date(MONTH_KEYS[Math.max(0, MONTH_KEYS.length - 6)].key);
   const defaultEndDate = new Date(MONTH_KEYS[MONTH_KEYS.length - 1].key);
   
-  // Now we use two independent states for start and end
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // --- 5. Data Processing (Memoized) ---
   const filteredData = useMemo(() => {
     const startKey = getMonthKey(startDate);
     const endKey = getMonthKey(endDate);
     if (!startKey || !endKey) return [];
     
-    // When you have a real API, this is what you'll send:
-    // (e.g., /api/data?start=2025-05-01&end=2025-07-01)
     return MOCK_FINANCIAL_DATA.filter(
       d => d.monthKey >= startKey && d.monthKey <= endKey
     );
-  }, [startDate, endDate]); // Dependency array is now [startDate, endDate]
+  }, [startDate, endDate]); 
 
   const stats = useMemo(() => {
     const totalRevenue = filteredData.reduce((acc, item) => acc + item.revenue, 0);
@@ -73,7 +61,6 @@ const DashboardPage = () => {
     return { totalRevenue, totalExpenses, netProfit, mktgRevenue };
   }, [filteredData]);
 
-  // --- 6. Table Row Renderer (Helper) ---
   const renderTableRow = (item) => (
     <tr key={item.segment} className="border-b border-gray-100 last:border-b-0">
       <td className="py-3 px-2 text-sm text-gray-700">{item.segment}</td>
@@ -85,7 +72,6 @@ const DashboardPage = () => {
     </tr>
   );
 
-  // --- 7. JSX (Component Render) ---
   return (
     <div className="space-y-6">
       

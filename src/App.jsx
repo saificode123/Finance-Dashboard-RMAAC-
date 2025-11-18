@@ -14,17 +14,14 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<SignUp />} /> 
           <Route path="/reset-password" element={<ResetPage />} />
-          
-          {/* ✨ UPDATED: Changed path to /home/* to allow nested routes */}
           <Route 
-            path="/home/*" // This allows /home, /home/input, /home/data etc.
+            path="/home/*" 
             element={
               <ProtectedRoute>
                 <HomePage />
               </ProtectedRoute>
             } 
           />
-          {/* <Route path="*" element={<NotFound />} /> */}
         </Routes>
       </Router>
     </AuthProvider>

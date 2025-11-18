@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/authContext';
-// ✨ CORRECT: Imports are from 'firebase/firestore'
+
 import { doc, setDoc, onSnapshot, getDoc, Timestamp } from 'firebase/firestore'; 
 import { Save, Loader2 } from 'lucide-react';
 import { MONTH_KEYS } from '../dummydata/DummyData';
 
 // --- Main Page Component ---
 const CostInputPage = () => {
-  // ✨ CORRECT: Get db from the context, not a direct import
   const { db, currentUser } = useAuth(); 
   const userId = currentUser?.uid;
-  const appId = 'finance-3f570'; // From your docs
+  const appId = import.meta.env.VITE_PROJECT_ID;
 
   // State for master segments (loaded from DB)
   const [segments, setSegments] = useState({ fixed: [], variable: {} });

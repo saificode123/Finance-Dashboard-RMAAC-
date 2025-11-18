@@ -47,6 +47,6 @@ export const doPasswordChange = async (password) => {
 // Send email verification
 export const doSendEmailVerification = async () => {
   return await sendEmailVerification(auth.currentUser, {
-    url: `${window.location.origin}/home`, // ✅ corrected interpolation
+    url: `${window.location.origin}/home`,
   });
 };

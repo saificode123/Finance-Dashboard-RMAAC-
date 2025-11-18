@@ -28,7 +28,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const appId = 'finance-3f570'; // Your App ID
+  const appId = import.meta.env.VITE_PROJECT_ID;
 
   // --- Effect to load data from Firestore ---
   useEffect(() => {
