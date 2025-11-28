@@ -107,6 +107,13 @@ const Header = () => {
                   >
                     Your Profile
                   </Link>
+                  <Link 
+                    to="/home/adminsetting" 
+                    onClick={() => setIsDropdownOpen(false)} // Close dropdown on click
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Admin Settings
+                  </Link>
                   <button
                     onClick={() => {
                       handleSignOut();

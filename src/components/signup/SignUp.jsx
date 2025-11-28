@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doCreateUserWithEmailAndPassword, doSignInWithGoogle, doSendEmailVerification } from '../../firebase/auth.jsx';
+import { doCreateUserWithEmailAndPassword, doSignInWithGoogle, doSendEmailVerification, doSignOut } from '../../firebase/auth.jsx';
 import { useAuth } from '../../context/authContext/index.jsx';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; 
+import { auth } from '../../firebase/firebase.jsx'; 
 import logo from '../login/download.png'
 
 const RhombusIcon = () => (
-  <img 
-    src={logo}
-    alt="Rhombus Logo" 
-    className="w-6 h-6 mr-2"
-    aria-hidden="true" 
-  />
+  <img src={logo} alt="Rhombus Logo" className="w-6 h-6 mr-2" aria-hidden="true" />
 );
 
 const GoogleIcon = () => (
@@ -37,28 +34,30 @@ const EyeOffIcon = () => (
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { userLoggedIn } = useAuth();
+  const { userLoggedIn, userAccess, db } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // Best practice
+  const [confirmPassword, setConfirmPassword] = useState(''); 
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  // ✨ ADDED: State for the terms checkbox
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
+  // ✨ ADDED: Get appId for correct path
+  const appId = import.meta.env.VITE_PROJECT_ID;
+  const SUPER_ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+
   useEffect(() => {
-    // Redirect to home if already logged in
-    if (userLoggedIn) navigate('/home');
-  }, [userLoggedIn, navigate]);
+    if (userLoggedIn && userAccess.accessGranted) {
+        navigate('/home');
+    }
+  }, [userLoggedIn, userAccess, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (isSigningUp) return;
 
-    // ✨ ADDED: Password match validation
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
       return;
@@ -68,23 +67,37 @@ const SignUp = () => {
     setIsSigningUp(true);
 
     try {
-      // Create the user
       await doCreateUserWithEmailAndPassword(email, password);
-      // Send verification email
-      await doSendEmailVerification();
+      const user = auth.currentUser;
 
-      // Redirect to login page with a success message
-      // This enforces your requirement that users MUST verify their email before logging in.
-      navigate('/', { 
-        replace: true, 
-        state: { 
-          message: 'Account created! Please check your email to verify and then sign in.' 
-        } 
-      });
+      if (user) {
+        const isSuperAdmin = email === SUPER_ADMIN_EMAIL;
+        
+        // ✨ FIX: Write to correct Artifacts path
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid), {
+            email: email,
+            createdAt: new Date().toISOString(),
+            accessGranted: isSuperAdmin, 
+            role: isSuperAdmin ? 'admin' : 'pending'
+        });
+
+        await doSendEmailVerification();
+
+        if (isSuperAdmin) {
+             navigate('/home', { replace: true });
+        } else {
+            await doSignOut();
+            navigate('/', { 
+              replace: true, 
+              state: { 
+                message: 'Account created! Please check your email to verify. Your access is currently pending admin approval.' 
+              } 
+            });
+        }
+      }
 
     } catch (error) {
       console.error("Error signing up:", error);
-      // Handle common Firebase errors
       if (error.code === 'auth/email-already-in-use') {
         setErrorMessage("This email address is already in use.");
       } else if (error.code === 'auth/weak-password') {
@@ -99,14 +112,43 @@ const SignUp = () => {
   const onGoogleSignIn = async () => {
     if (isSigningUp) return;
     setIsSigningUp(true);
+    setErrorMessage('');
+
     try {
-      await doSignInWithGoogle();
-      // This will trigger the useEffect and redirect to /home
+      const result = await doSignInWithGoogle();
+      const user = result.user;
+      
+      // ✨ FIX: Check correct path
+      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL;
+
+        // ✨ FIX: Write correct path
+        await setDoc(userDocRef, {
+            email: user.email,
+            createdAt: new Date().toISOString(),
+            accessGranted: isSuperAdmin, 
+            role: isSuperAdmin ? 'admin' : 'pending' 
+        });
+        
+        if (!isSuperAdmin) {
+            await doSignOut(); 
+            navigate('/', { 
+              replace: true, 
+              state: { message: 'Account created via Google! Access is pending admin approval.' } 
+            });
+            return; 
+        }
+      }
+
     } catch (error) {
       console.error("Error with Google Sign-In:", error);
       if (error.code !== 'auth/popup-closed-by-user') {
         setErrorMessage("Failed to sign in with Google.");
       }
+    } finally {
       setIsSigningUp(false);
     }
   };
@@ -143,8 +185,6 @@ const SignUp = () => {
             />
           </div>
 
-          {/* NOTE: First/Last name from your mockup are not here yet. See my explanation. */}
-
           <div className="mb-4 relative">
             <label htmlFor="password" className="sr-only">
               Password
@@ -168,7 +208,6 @@ const SignUp = () => {
             </button>
           </div>
 
-          {/* ✨ ADDED: Confirm Password field (Best Practice) */}
           <div className="mb-4 relative">
             <label htmlFor="confirm-password" className="sr-only">
               Confirm Password
@@ -184,7 +223,6 @@ const SignUp = () => {
             />
           </div>
 
-          {/* ✨ ADDED: Terms and Conditions Checkbox */}
           <div className="mb-6">
             <label className="flex items-center text-sm">
               <input 
@@ -212,7 +250,7 @@ const SignUp = () => {
 
           <button
             type="submit"
-            disabled={isSigningUp || !agreeToTerms} // ✨ ADDED: Disable if not agreed to terms
+            disabled={isSigningUp || !agreeToTerms} 
             className="w-full py-3 bg-[#6D79CF] text-white rounded-md font-semibold hover:bg-[#6D79CF] disabled:bg-purple-300 mb-6"
           >
             {isSigningUp ? 'Creating Account...' : 'Create Account'}

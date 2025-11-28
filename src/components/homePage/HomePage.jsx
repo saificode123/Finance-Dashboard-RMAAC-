@@ -4,7 +4,8 @@ import Header from '../header/Header';
 import DashboardPage from '../DashboardPage/DashboardPage';
 import InputPage from '../inputPage/InputPage'; 
 import CostInputPage from '../DataInput/CostInputPage';
-import ProfilePage from '../profilePage/ProfilePage'
+import ProfilePage from '../profilePage/ProfilePage';
+import AdminUserManagement from '../adminSetting/AdminUserManagement';
 
 // This component now acts as the main layout (Header + Page Content)
 // for all protected routes.
@@ -33,6 +34,8 @@ const Home = () => {
            <Route path="/profile" element={
               <ProfilePage />
           } />
+          {/* /home/adminsetting will render AdminUserManagement */}
+          <Route path="/adminsetting" element={<AdminUserManagement />} />
         </Routes>
       </main>
     </div>

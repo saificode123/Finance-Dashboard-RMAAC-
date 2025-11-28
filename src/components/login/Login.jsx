@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { doSignInWithEmailAndPassword, doSignInWithGoogle } from '../../firebase/auth';
-import { useAuth } from '../../context/authContext';
+import { useAuth } from '../../context/authContext'; // Ensure this matches your file structure
 import logo from '../../components/login/download.png'
 
 const RhombusIcon = () => (
@@ -37,29 +37,44 @@ const EyeOffIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const { userLoggedIn } = useAuth(); // This is a great pattern
+  const location = useLocation();
+  // ✨ Get 'loading' state to prevent premature checks
+  const { userLoggedIn, userAccess, loading } = useAuth(); 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState(location.state?.message || '');
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (userLoggedIn) navigate('/home');
-  }, [userLoggedIn, navigate]);
+    // 1. Wait for AuthProvider to finish loading user & permissions
+    if (loading) return;
+
+    // 2. If logged in, check permissions
+    if (userLoggedIn) {
+      if (userAccess.accessGranted) {
+        // Access Granted -> Go to Dashboard
+        navigate('/home', { replace: true });
+      } else {
+        // Access Denied/Pending -> Stay here and show message
+        setIsSigningIn(false); // Reset loading state of the button
+        setErrorMessage("Access pending. An administrator must grant you permission before you can use the dashboard.");
+      }
+    }
+  }, [userLoggedIn, userAccess, loading, navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (isSigningIn) return;
     setIsSigningIn(true);
-    setErrorMessage(''); // Clear previous errors
+    setErrorMessage(''); 
+    
     try {
       await doSignInWithEmailAndPassword(email, password);
-      // Navigation will be handled by the useEffect
+      // Logic continues in useEffect once auth state changes
     } catch (error) {
       console.error("Error signing in:", error);
-      // More specific errors could be checked here from error.code
       setErrorMessage("Invalid email or password. Please try again.");
       setIsSigningIn(false);
     }
@@ -68,10 +83,11 @@ const Login = () => {
   const onGoogleSignIn = async () => {
     if (isSigningIn) return;
     setIsSigningIn(true);
-    setErrorMessage(''); // Clear previous errors
+    setErrorMessage('');
+    
     try {
       await doSignInWithGoogle();
-      // Navigation will be handled by the useEffect
+      // Logic continues in useEffect once auth state changes
     } catch (error) {
       console.error("Error with Google Sign-In:", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -99,12 +115,11 @@ const Login = () => {
 
         <form onSubmit={onSubmit}>
           <div className="mb-4">
-            {/* ✨ ADDED: Accessible label (visually hidden) */}
             <label htmlFor="email-address" className="sr-only">
               Email address
             </label>
             <input
-              id="email-address" // ✨ ADDED: id for label
+              id="email-address"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -115,12 +130,11 @@ const Login = () => {
           </div>
 
           <div className="mb-4 relative">
-            {/* ✨ ADDED: Accessible label (visually hidden) */}
             <label htmlFor="password" className="sr-only">
               Password
             </label>
             <input
-              id="password" // ✨ ADDED: id for label
+              id="password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -128,12 +142,11 @@ const Login = () => {
               placeholder="Password"
               className="w-full px-4 py-3 border border-gray-300 rounded-md pr-10 focus:ring-2 focus:ring-purple-500"
             />
-            {/* ✨ CHANGED: span to button for accessibility */}
             <button
-              type="button" // Prevents form submission
+              type="button" 
               className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-gray-400"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"} // ✨ ADDED: aria-label
+              aria-label={showPassword ? "Hide password" : "Show password"} 
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
@@ -143,11 +156,14 @@ const Login = () => {
             Forgot password?
           </Link>
 
-          {/* ✨ ADDED: Error message is now above the button, a more common pattern */}
           {errorMessage && (
             <p 
-              className="text-red-600 text-sm text-center mb-4"
-              aria-live="polite" // ✨ ADDED: Announces error to screen readers
+              className={`text-sm text-center mb-4 ${
+                errorMessage.includes("Access pending") || errorMessage.includes("Account created")
+                  ? 'text-yellow-600 bg-yellow-50 p-2 rounded' 
+                  : 'text-red-600'
+              }`}
+              aria-live="polite" 
             >
               {errorMessage}
             </p>
